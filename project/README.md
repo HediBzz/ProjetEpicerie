@@ -2,6 +2,17 @@
 
 Application complète de gestion d'épicerie avec boutique en ligne et interface d'administration.
 
+## ⚠️ IMPORTANT - Déploiement
+
+Cette application nécessite **3 composants** qui doivent TOUS être déployés :
+1. **Frontend** (React)
+2. **Backend API** (Express)
+3. **PostgreSQL** (Base de données)
+
+**Vous ne pouvez PAS déployer uniquement le frontend !**
+
+👉 Si vous avez l'erreur "supabaseUrl is required", consultez : [IMPORTANT-DEPLOIEMENT.md](./IMPORTANT-DEPLOIEMENT.md)
+
 ## Architecture
 
 Cette application utilise :
