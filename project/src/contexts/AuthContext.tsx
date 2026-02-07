@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, type AdminUser } from '../lib/supabase';
+import { api, type AdminUser } from '../lib/api';
 
 interface AdminSession extends AdminUser {
   session_token: string;
@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (new Date(adminSession.expires_at) > new Date()) {
         setAdmin(adminSession);
+        api.setToken(adminSession.session_token);
       } else {
         localStorage.removeItem('admin_session');
       }
@@ -36,22 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const { data, error } = await supabase.rpc('authenticate_admin', {
-        p_username: username,
-        p_password: password,
-      });
+      const { data, error } = await api.authenticateAdmin(username, password);
 
-      if (error) {
-        return { error: 'Erreur de connexion' };
+      if (error || !data) {
+        return { error: error || 'Nom d\'utilisateur ou mot de passe incorrect' };
       }
 
-      if (!data || data.length === 0) {
-        return { error: 'Nom d\'utilisateur ou mot de passe incorrect' };
-      }
-
-      const adminSession = data[0] as AdminSession;
+      const adminSession = data as AdminSession;
       setAdmin(adminSession);
       localStorage.setItem('admin_session', JSON.stringify(adminSession));
+      api.setToken(adminSession.session_token);
 
       return { error: null };
     } catch (err) {
@@ -62,9 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     if (admin?.session_token) {
       try {
-        await supabase.rpc('delete_admin_session', {
-          p_token: admin.session_token,
-        });
+        await api.logout();
       } catch (err) {
         console.error('Error deleting session:', err);
       }
@@ -72,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setAdmin(null);
     localStorage.removeItem('admin_session');
+    api.setToken(null);
   };
 
   const getSessionToken = () => {

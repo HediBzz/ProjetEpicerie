@@ -1,6 +1,48 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: epicerie-db
+    environment:
+      POSTGRES_DB: epicerie
+      POSTGRES_USER: epicerie_user
+      POSTGRES_PASSWORD: epicerie_password_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epicerie_user -d epicerie"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=epicerie
+      - DB_USER=epicerie_user
+      - DB_PASSWORD=epicerie_password_2024
+      - PORT=3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
   app:
     build:
       context: .
@@ -9,9 +51,15 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - backend
     restart: unless-stopped
     networks:
       - app-network
+
+volumes:
+  postgres_data:
 
 networks:
   app-network:

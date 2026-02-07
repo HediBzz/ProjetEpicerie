@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, Package } from 'lucide-react';
-import { supabase, type Order, type OrderItem } from '../lib/supabase';
+import { api, type Order, type OrderItem } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface OrderWithItems extends Order {
@@ -19,17 +19,9 @@ export function OrderManagement() {
 
   const loadOrders = async () => {
     setLoading(true);
-    const token = getSessionToken();
-
-    if (!token) {
-      setLoading(false);
-      return;
-    }
 
     try {
-      const { data, error } = await supabase.rpc('admin_get_all_orders', {
-        p_token: token,
-      });
+      const { data, error } = await api.getAllOrders();
 
       if (!error && data) {
         setOrders(data);
@@ -44,15 +36,8 @@ export function OrderManagement() {
   };
 
   const loadOrderItems = async (orderId: string) => {
-    const token = getSessionToken();
-
-    if (!token) return;
-
     try {
-      const { data, error } = await supabase.rpc('admin_get_order_items', {
-        p_token: token,
-        p_order_id: orderId,
-      });
+      const { data, error } = await api.getOrderItems(orderId);
 
       if (!error && data) {
         setOrders(
@@ -72,16 +57,8 @@ export function OrderManagement() {
     orderId: string,
     status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
   ) => {
-    const token = getSessionToken();
-
-    if (!token) return;
-
     try {
-      const { error } = await supabase.rpc('admin_update_order_status', {
-        p_token: token,
-        p_order_id: orderId,
-        p_status: status,
-      });
+      const { error } = await api.updateOrderStatus(orderId, status);
 
       if (!error) {
         loadOrders();

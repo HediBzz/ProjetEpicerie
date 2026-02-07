@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Store, MapPin, Clock, Phone } from 'lucide-react';
-import { supabase, type Product } from '../lib/supabase';
+import { api, type Product } from '../lib/api';
 
 export function CustomerStore() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -30,11 +30,7 @@ export function CustomerStore() {
 
   const loadProducts = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('in_stock', true)
-      .order('name');
+    const { data, error } = await api.getPublicProducts();
 
     if (!error && data) {
       setProducts(data);

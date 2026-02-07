@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Package, PackageX } from 'lucide-react';
-import { supabase, type Product } from '../lib/supabase';
+import { api, type Product } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export function ProductManagement() {
@@ -28,17 +28,9 @@ export function ProductManagement() {
 
   const loadProducts = async () => {
     setLoading(true);
-    const token = getSessionToken();
-
-    if (!token) {
-      setLoading(false);
-      return;
-    }
 
     try {
-      const { data, error } = await supabase.rpc('admin_get_all_products', {
-        p_token: token,
-      });
+      const { data, error } = await api.getAllProducts();
 
       if (!error && data) {
         setProducts(data);
@@ -54,21 +46,17 @@ export function ProductManagement() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = getSessionToken();
-
-    if (!token) return;
 
     try {
-      const { error } = await supabase.rpc('admin_create_product', {
-        p_token: token,
-        p_name: formData.name,
-        p_description: formData.description,
-        p_price: parseFloat(formData.price),
-        p_unit: formData.unit,
-        p_image_url: formData.image_url || null,
-        p_stock_quantity: parseInt(formData.stock_quantity) || 0,
-        p_in_stock: formData.in_stock,
-        p_tags: formData.tags,
+      const { error } = await api.createProduct({
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        unit: formData.unit,
+        image_url: formData.image_url || null,
+        stock_quantity: parseInt(formData.stock_quantity) || 0,
+        in_stock: formData.in_stock,
+        tags: formData.tags,
       });
 
       if (!error) {
@@ -89,21 +77,16 @@ export function ProductManagement() {
     const product = products.find((p) => p.id === id);
     if (!product) return;
 
-    const token = getSessionToken();
-    if (!token) return;
-
     try {
-      const { error } = await supabase.rpc('admin_update_product', {
-        p_token: token,
-        p_id: id,
-        p_name: product.name,
-        p_description: product.description,
-        p_price: product.price,
-        p_unit: product.unit,
-        p_image_url: product.image_url || null,
-        p_stock_quantity: product.stock_quantity,
-        p_in_stock: product.in_stock,
-        p_tags: product.tags || [],
+      const { error } = await api.updateProduct(id, {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        unit: product.unit,
+        image_url: product.image_url || null,
+        stock_quantity: product.stock_quantity,
+        in_stock: product.in_stock,
+        tags: product.tags || [],
       });
 
       if (!error) {
@@ -122,14 +105,8 @@ export function ProductManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return;
 
-    const token = getSessionToken();
-    if (!token) return;
-
     try {
-      const { error } = await supabase.rpc('admin_delete_product', {
-        p_token: token,
-        p_id: id,
-      });
+      const { error } = await api.deleteProduct(id);
 
       if (!error) {
         loadProducts();
@@ -151,21 +128,16 @@ export function ProductManagement() {
     const product = products.find((p) => p.id === id);
     if (!product) return;
 
-    const token = getSessionToken();
-    if (!token) return;
-
     try {
-      const { error } = await supabase.rpc('admin_update_product', {
-        p_token: token,
-        p_id: id,
-        p_name: product.name,
-        p_description: product.description,
-        p_price: product.price,
-        p_unit: product.unit,
-        p_image_url: product.image_url || null,
-        p_stock_quantity: product.stock_quantity,
-        p_in_stock: !currentStatus,
-        p_tags: product.tags || [],
+      const { error } = await api.updateProduct(id, {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        unit: product.unit,
+        image_url: product.image_url || null,
+        stock_quantity: product.stock_quantity,
+        in_stock: !currentStatus,
+        tags: product.tags || [],
       });
 
       if (!error) {
